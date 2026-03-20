@@ -63,6 +63,18 @@ nav {
 }
 .nav-links a:hover { color: var(--text); }
 
+.lang-switch {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.6rem;
+    border-radius: 2px;
+    transition: color 0.15s, border-color 0.15s;
+}
+.lang-switch:hover { color: var(--text); border-color: var(--border2); }
+
 .nav-status {
     display: flex;
     align-items: center;

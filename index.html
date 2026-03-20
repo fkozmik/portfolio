@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Florian Kozmik — DevOps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0d0f;
+      --surface: #111518;
+      --surface2: #181e24;
+      --border: #1e2830;
+      --accent: #00e5ff;
+      --accent2: #ff4d6d;
+      --accent3: #39ff8f;
+      --text: #e8f0f5;
+      --muted: #5a6a78;
+      --mono: 'DM Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Custom cursor */
+    .cursor {
+      position: fixed;
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform 0.08s, background 0.2s;
+      mix-blend-mode: screen;
+    }
+    .cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1px solid var(--accent);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: transform 0.18s ease, width 0.2s, height 0.2s, opacity 0.2s;
+      opacity: 0.5;
+    }
+
+    /* Noise overlay */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    /* Grid lines */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HERO ── */
+    #hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 6rem 8vw 4rem;
+      z-index: 1;
+    }
+
+    .hero-tag {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.2s forwards;
+    }
+
+    .hero-tag span { color: var(--muted); }
+
+    h1 {
+      font-family: var(--sans);
+      font-size: clamp(3.5rem, 10vw, 9rem);
+      font-weight: 800;
+      line-height: 0.92;
+      letter-spacing: -0.03em;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.35s forwards;
+    }
+
+    h1 .line2 {
+      display: block;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(0,229,255,0.5);
+    }
+
+    .hero-sub {
+      margin-top: 2.5rem;
+      max-width: 480px;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      color: var(--muted);
+      opacity: 0;
+      animation: fadeUp 0.7s 0.5s forwards;
+    }
+
+    .hero-sub strong { color: var(--text); }
+
+    .hero-cta {
+      margin-top: 2.5rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.65s forwards;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.4rem;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border-radius: 2px;
+      transition: all 0.2s;
+      cursor: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 500;
+    }
+    .btn-primary:hover { background: #fff; transform: translateY(-2px); }
+
+    .btn-ghost {
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+    .hero-scroll {
+      position: absolute;
+      bottom: 2.5rem; left: 8vw;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fadeUp 0.7s 1s forwards;
+    }
+    .hero-scroll::before {
+      content: '';
+      width: 40px; height: 1px;
+      background: var(--muted);
+      display: block;
+      animation: lineGrow 1s 1.2s both;
+    }
+
+    /* Status badge */
+    .status-badge {
+      position: absolute;
+      top: 3rem; right: 8vw;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      opacity: 0;
+      animation: fadeDown 0.7s 0.8s forwards;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      background: var(--accent3);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    /* ── MARQUEE ── */
+    .marquee-wrapper {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      padding: 1rem 0;
+      background: var(--surface);
+    }
+    .marquee-track {
+      display: flex;
+      width: max-content;
+      animation: marquee 28s linear infinite;
+    }
+    .marquee-track span {
+      padding: 0 2rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .marquee-track span.accent { color: var(--accent); }
+
+    /* ── SECTIONS ── */
+    section { position: relative; z-index: 1; padding: 6rem 8vw; }
+
+    .section-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 3rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── EXPERIENCE ── */
+    #experience { border-top: 1px solid var(--border); }
+
+    .exp-grid { display: grid; gap: 2px; }
+
+    .exp-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem 2.5rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      transition: background 0.2s, border-color 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .exp-item::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      transform: scaleY(0);
+      transform-origin: bottom;
+      transition: transform 0.3s;
+    }
+    .exp-item:hover { background: var(--surface2); border-color: var(--border); }
+    .exp-item:hover::before { transform: scaleY(1); }
+
+    .exp-company {
+      font-family: var(--sans);
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .exp-role {
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-top: 0.3rem;
+      letter-spacing: 0.05em;
+    }
+    .exp-period {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .exp-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 1.2rem;
+      grid-column: 1 / -1;
+    }
+    .tag {
+      padding: 0.2rem 0.6rem;
+      border: 1px solid var(--border);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-radius: 2px;
+    }
+    .exp-bullets {
+      grid-column: 1 / -1;
+      margin-top: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .exp-bullets li {
+      list-style: none;
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding-left: 1.2em;
+      position: relative;
+      line-height: 1.6;
+    }
+    .exp-bullets li::before {
+      content: '›';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+
+    /* ── SKILLS ── */
+    #skills { border-top: 1px solid var(--border); background: var(--surface); }
+
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .skill-card {
+      border: 1px solid var(--border);
+      padding: 1.8rem;
+      background: var(--bg);
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .skill-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+
+    .skill-category {
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .skill-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .skill-pill {
+      padding: 0.3rem 0.7rem;
+      background: var(--surface);
+      font-size: 0.7rem;
+      color: var(--text);
+      border-radius: 2px;
+      border: 1px solid var(--border);
+    }
+
+    /* ── ABOUT / STATS ── */
+    #about { border-top: 1px solid var(--border); }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .about-text {
+      font-size: 0.85rem;
+      line-height: 1.9;
+      color: var(--muted);
+    }
+    .about-text strong { color: var(--text); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+    }
+
+    .stat-box {
+      background: var(--surface);
+      padding: 2rem;
+      text-align: center;
+    }
+    .stat-number {
+      font-family: var(--sans);
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--accent);
+      display: block;
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-top: 0.5rem;
+      display: block;
+    }
+
+    /* ── CONTACT ── */
+    #contact {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      background: var(--surface);
+    }
+
+    .contact-heading {
+      font-family: var(--sans);
+      font-size: clamp(2rem, 6vw, 5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+      line-height: 1;
+    }
+
+    .contact-heading .ghost {
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(0,229,255,0.4);
+    }
+
+    .contact-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 2.5rem;
+    }
+
+    .contact-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1.5rem;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      transition: all 0.2s;
+      cursor: none;
+    }
+    .contact-link:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 2rem 8vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes lineGrow {
+      from { width: 0; }
+      to   { width: 40px; }
+    }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* Reveal on scroll */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s, transform 0.7s;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      #hero { padding: 5rem 6vw 4rem; }
+      section { padding: 4rem 6vw; }
+      .about-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .status-badge { display: none; }
+      footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="status-badge">
+    <span class="status-dot"></span>
+    Disponible pour opportunités
+  </div>
+
+  <p class="hero-tag"><span>//</span> florian.kozmik — portfolio</p>
+
+  <h1>
+    FLORIAN<br>
+    <span class="line2">KOZMIK</span>
+  </h1>
+
+  <p class="hero-sub">
+    <strong>DevOps engineer · FOSS advocate · NixOS daily driver</strong><br>
+    6+ ans d'expérience en automatisation d'infrastructure cloud, monitoring et support technique. Basé à Chambéry, Rhône-Alpes.
+  </p>
+
+  <div class="hero-cta">
+    <a href="mailto:florian.kozmik@gmail.com" class="btn btn-primary">↗ Me contacter</a>
+    <a href="https://github.com" class="btn btn-ghost" target="_blank">GitHub</a>
+    <a href="https://linkedin.com" class="btn btn-ghost" target="_blank">LinkedIn</a>
+  </div>
+
+  <div class="hero-scroll">scroll</div>
+</section>
+
+<!-- ── MARQUEE ── -->
+<div class="marquee-wrapper">
+  <div class="marquee-track">
+    <span>Ansible</span><span class="accent">·</span>
+    <span>Terraform</span><span class="accent">·</span>
+    <span>NixOS</span><span class="accent">·</span>
+    <span>Docker / Swarm</span><span class="accent">·</span>
+    <span>Prometheus</span><span class="accent">·</span>
+    <span>Grafana</span><span class="accent">·</span>
+    <span>Jenkins</span><span class="accent">·</span>
+    <span>RHEL</span><span class="accent">·</span>
+    <span>PostgreSQL</span><span class="accent">·</span>
+    <span>Wireguard</span><span class="accent">·</span>
+    <span>OVH · AWS · Scaleway</span><span class="accent">·</span>
+    <span>Ansible</span><span class="accent">·</span>
+    <span>Terraform</span><span class="accent">·</span>
+    <span>NixOS</span><span class="accent">·</span>
+    <span>Docker / Swarm</span><span class="accent">·</span>
+    <span>Prometheus</span><span class="accent">·</span>
+    <span>Grafana</span><span class="accent">·</span>
+    <span>Jenkins</span><span class="accent">·</span>
+    <span>RHEL</span><span class="accent">·</span>
+    <span>PostgreSQL</span><span class="accent">·</span>
+    <span>Wireguard</span><span class="accent">·</span>
+    <span>OVH · AWS · Scaleway</span><span class="accent">·</span>
+  </div>
+</div>
+
+<!-- ── EXPERIENCE ── -->
+<section id="experience">
+  <div class="section-label">Expériences professionnelles</div>
+
+  <div class="exp-grid">
+
+    <div class="exp-item reveal">
+      <div>
+        <div class="exp-company">Enalean</div>
+        <div class="exp-role">DevOps / Support IT for clients</div>
+      </div>
+      <div class="exp-period">2022 — aujourd'hui</div>
+      <div class="exp-tags">
+        <span class="tag">RHEL</span>
+        <span class="tag">NixOS</span>
+        <span class="tag">Ansible</span>
+        <span class="tag">Terraform</span>
+        <span class="tag">Docker/Swarm</span>
+        <span class="tag">Prometheus</span>
+        <span class="tag">Grafana</span>
+        <span class="tag">Jenkins</span>
+        <span class="tag">DBMS</span>
+      </div>
+      <ul class="exp-bullets">
+        <li>Automatisation et déploiement d'infrastructure cloud (Ansible, Terraform, Jenkins, Bash)</li>
+        <li>Déploiement et monitoring : logs, alerting, incidents (Prometheus, Grafana)</li>
+        <li>Support client : analyse d'incidents, patches, code review (~150 clients)</li>
+        <li>Rédaction et maintenance de documentation interne et publique</li>
+        <li>Gestion des actifs IT internes : commandes, inventaire, affectation matérielle (~30 collaborateurs)</li>
+      </ul>
+    </div>
+
+    <div class="exp-item reveal">
+      <div>
+        <div class="exp-company">Sully Group / Géodis</div>
+        <div class="exp-role">Technicien Exploitation — 3×8</div>
+      </div>
+      <div class="exp-period">2020 — 2022</div>
+      <div class="exp-tags">
+        <span class="tag">Windows</span>
+        <span class="tag">Linux</span>
+        <span class="tag">AS400 / AIX</span>
+        <span class="tag">Support</span>
+      </div>
+      <ul class="exp-bullets">
+        <li>Support téléphonique et par ticketing</li>
+        <li>Diagnostic et résolution d'incidents</li>
+        <li>Supervision et contrôle opérationnel</li>
+      </ul>
+    </div>
+
+    <div class="exp-item reveal">
+      <div>
+        <div class="exp-company">SKIDATA</div>
+        <div class="exp-role">Technicien IT et Maintenance — Alternance</div>
+      </div>
+      <div class="exp-period">2018 — 2020</div>
+      <div class="exp-tags">
+        <span class="tag">Windows</span>
+        <span class="tag">Linux</span>
+        <span class="tag">Hardware</span>
+        <span class="tag">Bash</span>
+      </div>
+      <ul class="exp-bullets">
+        <li>Développement d'une solution de clonage PC et Android</li>
+        <li>Réparation de circuits imprimés (PCBs), moteurs et imprimantes de tickets</li>
+        <li>Maintenance logicielle et matérielle de solutions de contrôle d'accès</li>
+        <li>Scripting Bash · Préparation de colis · Documentation</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── SKILLS ── -->
+<section id="skills">
+  <div class="section-label">Compétences</div>
+
+  <div class="skills-grid">
+    <div class="skill-card reveal">
+      <div class="skill-category">Cloud</div>
+      <div class="skill-items">
+        <span class="skill-pill">OVH</span>
+        <span class="skill-pill">Scaleway</span>
+        <span class="skill-pill">AWS</span>
+      </div>
+    </div>
+
+    <div class="skill-card reveal">
+      <div class="skill-category">IaC / DevOps</div>
+      <div class="skill-items">
+        <span class="skill-pill">Terraform</span>
+        <span class="skill-pill">Ansible</span>
+        <span class="skill-pill">Docker / Swarm</span>
+        <span class="skill-pill">Prometheus</span>
+        <span class="skill-pill">Grafana</span>
+        <span class="skill-pill">Jenkins</span>
+        <span class="skill-pill">Bash</span>
+        <span class="skill-pill">Jinja2</span>
+      </div>
+    </div>
+
+    <div class="skill-card reveal">
+      <div class="skill-category">Systèmes</div>
+      <div class="skill-items">
+        <span class="skill-pill">RHEL</span>
+        <span class="skill-pill">NixOS</span>
+        <span class="skill-pill">Debian</span>
+        <span class="skill-pill">macOS</span>
+      </div>
+    </div>
+
+    <div class="skill-card reveal">
+      <div class="skill-category">Réseau</div>
+      <div class="skill-items">
+        <span class="skill-pill">Linux / RedHat</span>
+        <span class="skill-pill">Ubiquiti</span>
+        <span class="skill-pill">Tailscale</span>
+        <span class="skill-pill">WireGuard</span>
+      </div>
+    </div>
+
+    <div class="skill-card reveal">
+      <div class="skill-category">DBMS</div>
+      <div class="skill-items">
+        <span class="skill-pill">MySQL</span>
+        <span class="skill-pill">MongoDB</span>
+        <span class="skill-pill">PostgreSQL</span>
+      </div>
+    </div>
+
+    <div class="skill-card reveal">
+      <div class="skill-category">Pratiques</div>
+      <div class="skill-items">
+        <span class="skill-pill">Clean Code</span>
+        <span class="skill-pill">Conventional Commits</span>
+        <span class="skill-pill">Code Review</span>
+        <span class="skill-pill">FOSS</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ABOUT ── -->
+<section id="about">
+  <div class="section-label">À propos</div>
+
+  <div class="about-grid">
+    <div class="about-text reveal">
+      <p>
+        Technicien systèmes et DevOps avec <strong>6+ ans d'expérience</strong>, je suis passionné par le logiciel libre et l'automatisation.<br><br>
+        J'utilise <strong>NixOS</strong> au quotidien, ce qui témoigne de mon engagement pour des systèmes reproductibles et déclaratifs.<br><br>
+        Mes contributions et projets personnels sont disponibles sur <strong>GitHub</strong>. Je suis à l'aise aussi bien dans des environnements cloud multi-clients que dans la gestion d'infrastructure interne.
+      </p>
+      <br>
+      <p style="font-size:0.75rem; color: var(--muted);">
+        <strong style="color:var(--text);">Formation :</strong><br>
+        BTS Systèmes, Réseaux et Sécurité — 2020<br>
+        Bac Pro Électrotechnique — 2015
+      </p>
+    </div>
+
+    <div class="stats-grid reveal">
+      <div class="stat-box">
+        <span class="stat-number">6+</span>
+        <span class="stat-label">Ans d'expérience</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-number">150</span>
+        <span class="stat-label">Clients supportés</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-number">30</span>
+        <span class="stat-label">Collaborateurs gérés</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-number">∞</span>
+        <span class="stat-label">Passion FOSS</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CONTACT ── -->
+<section id="contact">
+  <div class="section-label" style="justify-content:center; text-align:center">Contact</div>
+  <div class="contact-heading reveal">
+    Travaillons<br><span class="ghost">ensemble.</span>
+  </div>
+  <p class="reveal" style="color:var(--muted); font-size:0.8rem; margin-top:1rem;">Ouvert aux opportunités · Chambéry, Rhône-Alpes</p>
+
+  <div class="contact-links reveal">
+    <a href="mailto:florian.kozmik@gmail.com" class="contact-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
+      florian.kozmik@gmail.com
+    </a>
+    <a href="tel:0614090939" class="contact-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.01 1.18a2 2 0 012-2.18h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 6.91a16 16 0 006.18 6.18l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2.02z"/></svg>
+      06 14 09 09 39
+    </a>
+    <a href="https://github.com" target="_blank" class="contact-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+      GitHub
+    </a>
+    <a href="https://linkedin.com" target="_blank" class="contact-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      LinkedIn
+    </a>
+  </div>
+</section>
+
+<footer>
+  <span>© 2025 Florian Kozmik</span>
+  <span>Chambéry · Rhône-Alpes · FR</span>
+</footer>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+
+  function animateRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      ring.style.width = '60px';
+      ring.style.height = '60px';
+      ring.style.opacity = '0.8';
+    });
+    el.addEventListener('mouseleave', () => {
+      ring.style.width = '36px';
+      ring.style.height = '36px';
+      ring.style.opacity = '0.5';
+    });
+  });
+
+  // Reveal on scroll
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
